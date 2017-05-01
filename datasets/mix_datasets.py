@@ -20,7 +20,8 @@ def main(perc_left, left, right, out):
 
     os.makedirs(out)
     files_in = left_sampled + right_sampled
-    for f in files_in:
+    for i, f in enumerate(files_in):
+        print('{}/{}'.format(i + 1, len(files_in)))
         shutil.copy2(f, out)
 
 
