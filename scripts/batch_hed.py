@@ -46,11 +46,13 @@ imgList = os.listdir(args.images_dir)
 nImgs = len(imgList)
 print('#images = %d' % nImgs)
 
+# remove the following two lines if testing with cpu
 caffe.set_mode_gpu()
 caffe.set_device(args.gpu_id)
+
 # load net
 net = caffe.Net(args.prototxt, args.caffemodel, caffe.TEST)
-# pad border
+# set up border
 border = args.border    
 
 for i in range(nImgs):
@@ -59,22 +61,32 @@ for i in range(nImgs):
     im = Image.open(os.path.join(args.images_dir, imgList[i]))
 
     in_ = np.array(im, dtype=np.float32)
+    # pad border
     in_ = np.pad(in_,((border, border),(border,border),(0,0)),'reflect')
 
     in_ = in_[:,:,::-1]
     in_ -= np.array((104.00698793,116.66876762,122.67891434))
     in_ = in_.transpose((2, 0, 1))
-    # remove the following two lines if testing with cpu
 
     # shape for input (data blob is N x C x H x W), set data
     net.blobs['data'].reshape(1, *in_.shape)
     net.blobs['data'].data[...] = in_
     # run net and take argmax for prediction
     net.forward()
+
+    # TODO save the side outputs as well!!
+    # out1 = net.blobs['sigmoid-dsn1'].data[0][0,:,:]
+    # out2 = net.blobs['sigmoid-dsn2'].data[0][0,:,:]
+    # out3 = net.blobs['sigmoid-dsn3'].data[0][0,:,:]
+    # out4 = net.blobs['sigmoid-dsn4'].data[0][0,:,:]
+    # out5 = net.blobs['sigmoid-dsn5'].data[0][0,:,:]
+
     fuse = net.blobs['sigmoid-fuse'].data[0][0, :, :]
     # get rid of the border
     fuse = fuse[border:-border, border:-border]
+
     # save hed file to the disk
+    # TODO save as jpegs, not dumb matlab files
     name, ext = os.path.splitext(imgList[i])
     sio.savemat(os.path.join(args.hed_mat_dir, name + '.mat'), {'predict':fuse})
  
